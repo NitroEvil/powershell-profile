@@ -21,7 +21,7 @@ if (-not (Test-InternetConnection)) {
 }
 
 # Profile creation or update
-if (!(Test-Path -Path $PROFILE -PathType Leaf)) {
+if (-not (Test-Path -Path $PROFILE -PathType Leaf)) {
     try {
         # Detect Version of PowerShell & Create Profile directories if they do not exist.
         $profilePath = ""
@@ -31,7 +31,7 @@ if (!(Test-Path -Path $PROFILE -PathType Leaf)) {
             $profilePath = "$env:userprofile\Documents\WindowsPowerShell"
         }
 
-        if (!(Test-Path -Path $profilePath)) {
+        if (-not (Test-Path -Path $profilePath)) {
             New-Item -Path $profilePath -ItemType "directory"
         }
 
