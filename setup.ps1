@@ -95,19 +95,13 @@ if ((Test-Path -Path $PROFILE) -and (winget list --name "OhMyPosh" -e) -and ($fo
     Write-Warning "Setup completed with errors. Please check the error messages above."
 }
 
-# Choco install
-try {
-    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-} catch {
-    Write-Error "Failed to install Chocolatey. Error: $_"
-}
-
 # Terminal Icons Install
 try {
     Install-Module -Name Terminal-Icons -Repository PSGallery -Force
 } catch {
     Write-Error "Failed to install Terminal Icons module. Error: $_"
 }
+
 # zoxide Install
 try {
     winget install -e --id ajeetdsouza.zoxide
