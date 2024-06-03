@@ -19,9 +19,9 @@ if (-not (Test-Path -Path $PROFILE -PathType Leaf)) {
         # Detect Version of PowerShell & Create Profile directories if they do not exist.
         $profilePath = ""
         if ($PSVersionTable.PSEdition -eq "Core") { 
-            $profilePath = "$env:userprofile\Documents\Powershell"
+            $profilePath = [Environment]::GetFolderPath("MyDocuments") + "\Powershell"
         } elseif ($PSVersionTable.PSEdition -eq "Desktop") {
-            $profilePath = "$env:userprofile\Documents\WindowsPowerShell"
+            $profilePath = [Environment]::GetFolderPath("MyDocuments") + "\WindowsPowerShell"
         }
 
         if (-not (Test-Path -Path $profilePath)) {
