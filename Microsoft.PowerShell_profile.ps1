@@ -19,9 +19,12 @@ function Update-Profile {
     }
 
     try {
-        $url = "https://raw.githubusercontent.com/ChrisTitusTech/powershell-profile/main/Microsoft.PowerShell_profile.ps1"
+        $options = @{
+            Uri     = "https://raw.githubusercontent.com/NitroEvil/powershell-profile/main/Microsoft.PowerShell_profile.ps1"
+            OutFile = "$env:temp/Microsoft.PowerShell_profile.ps1"
+        }
+        Invoke-RestMethod @options
         $oldhash = Get-FileHash $PROFILE
-        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
         $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
         if ($newhash.Hash -ne $oldhash.Hash) {
             Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
@@ -67,7 +70,8 @@ Update-PowerShell
 
 
 # Admin Check and Prompt Customization
-$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$currentUser = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+$isAdmin = $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 function prompt {
     if ($isAdmin) { "[" + (Get-Location) + "] # " } else { "[" + (Get-Location) + "] $ " }
 }
@@ -83,13 +87,13 @@ function Test-CommandExists {
 
 # Editor Configuration
 $EDITOR = if (Test-CommandExists nvim) { 'nvim' }
-          elseif (Test-CommandExists pvim) { 'pvim' }
-          elseif (Test-CommandExists vim) { 'vim' }
-          elseif (Test-CommandExists vi) { 'vi' }
-          elseif (Test-CommandExists code) { 'code' }
-          elseif (Test-CommandExists notepad++) { 'notepad++' }
-          elseif (Test-CommandExists sublime_text) { 'sublime_text' }
-          else { 'notepad' }
+elseif (Test-CommandExists pvim) { 'pvim' }
+elseif (Test-CommandExists vim) { 'vim' }
+elseif (Test-CommandExists vi) { 'vi' }
+elseif (Test-CommandExists code) { 'code' }
+elseif (Test-CommandExists notepad++) { 'notepad++' }
+elseif (Test-CommandExists sublime_text) { 'sublime_text' }
+else { 'notepad' }
 Set-Alias -Name vim -Value $EDITOR
 
 function Edit-Profile {
@@ -97,7 +101,7 @@ function Edit-Profile {
 }
 function touch($file) { "" | Out-File $file -Encoding ASCII }
 function ff($name) {
-    Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
+    Get-ChildItem -Recurse -Filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         Write-Output "$($_.directory)\$($_)"
     }
 }
@@ -108,7 +112,7 @@ function Get-PubIP { (Invoke-WebRequest http://ifconfig.me/ip).Content }
 # System Utilities
 function uptime {
     if ($PSVersionTable.PSVersion.Major -eq 5) {
-        Get-WmiObject win32_operatingsystem | Select-Object @{Name='LastBootUpTime'; Expression={$_.ConverttoDateTime($_.lastbootuptime)}} | Format-Table -HideTableHeaders
+        Get-WmiObject win32_operatingsystem | Select-Object @{Name = 'LastBootUpTime'; Expression = { $_.ConverttoDateTime($_.lastbootuptime) } } | Format-Table -HideTableHeaders
     } else {
         net statistics workstation | Select-String "since" | ForEach-Object { $_.ToString().Replace('Statistics since ', '') }
     }
@@ -150,14 +154,14 @@ function hb {
 }
 function grep($regex, $dir) {
     if ( $dir ) {
-        Get-ChildItem $dir | select-string $regex
+        Get-ChildItem $dir | Select-String $regex
         return
     }
-    $input | select-string $regex
+    $input | Select-String $regex
 }
 
 function df {
-    get-volume
+    Get-Volume
 }
 
 function sed($file, $find, $replace) {
@@ -169,7 +173,7 @@ function which($name) {
 }
 
 function export($name, $value) {
-    set-item -force -path "env:$name" -value $value;
+    Set-Item -Force -Path "env:$name" -Value $value;
 }
 
 function pkill($name) {
@@ -181,13 +185,13 @@ function pgrep($name) {
 }
 
 function head {
-  param($Path, $n = 10)
-  Get-Content $Path -Head $n
+    param($Path, $n = 10)
+    Get-Content $Path -Head $n
 }
 
 function tail {
-  param($Path, $n = 10)
-  Get-Content $Path -Tail $n
+    param($Path, $n = 10)
+    Get-Content $Path -Tail $n
 }
 
 # Quick File Creation
@@ -247,9 +251,9 @@ function pst { Get-Clipboard }
 
 # Enhanced PowerShell Experience
 Set-PSReadLineOption -Colors @{
-    Command = 'Yellow'
+    Command   = 'Yellow'
     Parameter = 'Green'
-    String = 'DarkCyan'
+    String    = 'DarkCyan'
 }
 
 ## Final Line to set prompt
