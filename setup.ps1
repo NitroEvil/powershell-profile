@@ -61,35 +61,35 @@ try {
 }
 
 # Font Install
+$fontName = "MesloLGS Nerd Font"
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+$fontFamilies = (New-Object System.Drawing.Text.InstalledFontCollection).Families.Name
 try {
-    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
-    $fontFamilies = (New-Object System.Drawing.Text.InstalledFontCollection).Families.Name
-
     if ($fontFamilies -notcontains "MesloLGS Nerd Font") {
-        $fontName = "Meslo"
+        $fontDownloadName = "Meslo"
         $options = @{
-            Uri     = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/$fontName.zip"
-            OutFile = ".\$fontName.zip"
+            Uri     = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/$fontDownloadName.zip"
+            OutFile = ".\$fontDownloadName.zip"
         }
         Invoke-RestMethod @options
 
-        Expand-Archive -Path ".\$fontName.zip" -DestinationPath ".\$fontName" -Force
+        Expand-Archive -Path ".\$fontDownloadName.zip" -DestinationPath ".\$fontDownloadName" -Force
         $destination = (New-Object -ComObject Shell.Application).Namespace(0x14)
-        Get-ChildItem -Path ".\$fontName" -Recurse -Filter "*.ttf" | ForEach-Object {
+        Get-ChildItem -Path ".\$fontDownloadName" -Recurse -Filter "*.ttf" | ForEach-Object {
             If (-not(Test-Path "C:\Windows\Fonts\$($_.Name)")) {
                 $destination.CopyHere($_.FullName, 0x10)
             }
         }
 
-        Remove-Item -Path ".\$fontName" -Recurse -Force
-        Remove-Item -Path ".\$fontName.zip" -Force
+        Remove-Item -Path ".\$fontDownloadName" -Recurse -Force
+        Remove-Item -Path ".\$fontDownloadName.zip" -Force
     }
 } catch {
     Write-Error "Failed to download or install the Cascadia Code font. Error: $_"
 }
 
 # Final check and message to the user
-if ((Test-Path -Path $PROFILE) -and (winget list --name "OhMyPosh" -e) -and ($fontFamilies -contains "CaskaydiaCove NF")) {
+if ((Test-Path -Path $PROFILE) -and (winget list --name "OhMyPosh" -e) -and ($fontFamilies -contains $fontName)) {
     Write-Host "Setup completed successfully. Please restart your PowerShell session to apply changes."
 } else {
     Write-Warning "Setup completed with errors. Please check the error messages above."
