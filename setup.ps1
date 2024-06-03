@@ -53,7 +53,7 @@ if (-not (Test-Path -Path $PROFILE -PathType Leaf)) {
     }
 }
 
-# OMP Install
+# OhMyPosh Install
 try {
     winget install -e --accept-source-agreements --accept-package-agreements JanDeDobbeleer.OhMyPosh
 } catch {
@@ -65,24 +65,24 @@ try {
     [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
     $fontFamilies = (New-Object System.Drawing.Text.InstalledFontCollection).Families.Name
 
-    if ($fontFamilies -notcontains "CaskaydiaCove NF") {
-        $webClient = New-Object System.Net.WebClient
-        $webClient.DownloadFileAsync((New-Object System.Uri("https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/CascadiaCode.zip")), ".\CascadiaCode.zip")
-        
-        while ($webClient.IsBusy) {
-            Start-Sleep -Seconds 2
+    if ($fontFamilies -notcontains "MesloLGS Nerd Font") {
+        $fontName = "Meslo"
+        $options = @{
+            Uri     = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/$fontName.zip"
+            OutFile = ".\$fontName.zip"
         }
+        Invoke-RestMethod @options
 
-        Expand-Archive -Path ".\CascadiaCode.zip" -DestinationPath ".\CascadiaCode" -Force
+        Expand-Archive -Path ".\$fontName.zip" -DestinationPath ".\$fontName" -Force
         $destination = (New-Object -ComObject Shell.Application).Namespace(0x14)
-        Get-ChildItem -Path ".\CascadiaCode" -Recurse -Filter "*.ttf" | ForEach-Object {
-            If (-not(Test-Path "C:\Windows\Fonts\$($_.Name)")) {        
+        Get-ChildItem -Path ".\$fontName" -Recurse -Filter "*.ttf" | ForEach-Object {
+            If (-not(Test-Path "C:\Windows\Fonts\$($_.Name)")) {
                 $destination.CopyHere($_.FullName, 0x10)
             }
         }
 
-        Remove-Item -Path ".\CascadiaCode" -Recurse -Force
-        Remove-Item -Path ".\CascadiaCode.zip" -Force
+        Remove-Item -Path ".\$fontName" -Recurse -Force
+        Remove-Item -Path ".\$fontName.zip" -Force
     }
 } catch {
     Write-Error "Failed to download or install the Cascadia Code font. Error: $_"
