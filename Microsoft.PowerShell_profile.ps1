@@ -118,9 +118,7 @@ function uptime {
     }
 }
 
-function reload-profile {
-    & $profile
-}
+function reload-profile { . $PROFILE }
 
 function unzip ($file) {
     Write-Output("Extracting", $file, "to", $pwd)
