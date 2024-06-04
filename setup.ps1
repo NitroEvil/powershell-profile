@@ -2,7 +2,7 @@
 $currentUser = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
 if (-not ($currentUser.IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))) {
     Write-Warning "Please run this script as an Administrator!"
-    # break
+    break
 }
 
 # Check for internet connectivity before proceeding
