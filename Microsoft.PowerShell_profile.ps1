@@ -96,9 +96,7 @@ elseif (Test-CommandExists sublime_text) { 'sublime_text' }
 else { 'notepad' }
 Set-Alias -Name vim -Value $EDITOR
 
-function Edit-Profile {
-    vim $PROFILE.CurrentUserAllHosts
-}
+function Edit-Profile { vim $PROFILE.CurrentUserAllHosts }
 function touch($file) { "" | Out-File $file -Encoding ASCII }
 function ff($name) {
     Get-ChildItem -Recurse -Filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
@@ -112,7 +110,9 @@ function Get-PubIP { (Invoke-WebRequest http://ifconfig.me/ip).Content }
 # System Utilities
 function uptime {
     if ($PSVersionTable.PSVersion.Major -eq 5) {
-        Get-WmiObject win32_operatingsystem | Select-Object @{Name = 'LastBootUpTime'; Expression = { $_.ConverttoDateTime($_.lastbootuptime) } } | Format-Table -HideTableHeaders
+        Get-WmiObject win32_operatingsystem |
+        Select-Object @{Name = 'LastBootUpTime'; Expression = { $_.ConverttoDateTime($_.lastbootuptime) } } |
+        Format-Table -HideTableHeaders
     } else {
         net statistics workstation | Select-String "since" | ForEach-Object { $_.ToString().Replace('Statistics since ', '') }
     }
@@ -134,45 +134,27 @@ function grep($regex, $dir) {
     $input | Select-String $regex
 }
 
-function df {
-    Get-Volume
-}
+function df { Get-Volume }
 
-function sed($file, $find, $replace) {
-    (Get-Content $file).replace("$find", $replace) | Set-Content $file
-}
+function sed($file, $find, $replace) { (Get-Content $file).replace("$find", $replace) | Set-Content $file }
 
-function which($name) {
-    Get-Command $name | Select-Object -ExpandProperty Definition
-}
+function which($name) { Get-Command $name | Select-Object -ExpandProperty Definition }
 
-function export($name, $value) {
-    Set-Item -Force -Path "env:$name" -Value $value;
-}
+function export($name, $value) { Set-Item -Force -Path "env:$name" -Value $value; }
 
-function pkill($name) {
-    Get-Process $name -ErrorAction SilentlyContinue | Stop-Process
-}
+function pkill($name) { Get-Process $name -ErrorAction SilentlyContinue | Stop-Process }
 
-function pgrep($name) {
-    Get-Process $name
-}
+function pgrep($name) { Get-Process $name }
 
-function head {
-    param($Path, $n = 10)
-    Get-Content $Path -Head $n
-}
+function head($Path, $n = 10) { Get-Content $Path -Head $n }
 
-function tail {
-    param($Path, $n = 10)
-    Get-Content $Path -Tail $n
-}
+function tail($Path, $n = 10) { Get-Content $Path -Tail $n }
 
 # Quick File Creation
-function nf { param($name) New-Item -ItemType "file" -Path . -Name $name }
+function nf($name) { New-Item -ItemType "file" -Path . -Name $name }
 
 # Directory Management
-function mkcd { param($dir) mkdir $dir -Force; Set-Location $dir }
+function mkcd($dir) { mkdir $dir -Force; Set-Location $dir }
 
 ### Quality of Life Aliases
 
@@ -196,7 +178,7 @@ function gs { git status }
 
 function ga { git add . }
 
-function gc { param($m) git commit -m "$m" }
+function gc($message) { git commit -m "$message" }
 
 function gp { git push }
 
