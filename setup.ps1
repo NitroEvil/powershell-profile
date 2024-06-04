@@ -53,7 +53,7 @@ if (-not (Test-Path -Path $PROFILE -PathType Leaf)) {
     }
 }
 
-# OMP Install
+# OhMyPosh Install
 try {
     winget install -e --accept-source-agreements --accept-package-agreements JanDeDobbeleer.OhMyPosh
 } catch {
@@ -61,45 +61,38 @@ try {
 }
 
 # Font Install
+$fontName = "MesloLGS Nerd Font"
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+$fontFamilies = (New-Object System.Drawing.Text.InstalledFontCollection).Families.Name
 try {
-    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
-    $fontFamilies = (New-Object System.Drawing.Text.InstalledFontCollection).Families.Name
-
-    if ($fontFamilies -notcontains "CaskaydiaCove NF") {
-        $webClient = New-Object System.Net.WebClient
-        $webClient.DownloadFileAsync((New-Object System.Uri("https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/CascadiaCode.zip")), ".\CascadiaCode.zip")
-        
-        while ($webClient.IsBusy) {
-            Start-Sleep -Seconds 2
+    if ($fontFamilies -notcontains "MesloLGS Nerd Font") {
+        $fontDownloadName = "Meslo"
+        $options = @{
+            Uri     = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/$fontDownloadName.zip"
+            OutFile = ".\$fontDownloadName.zip"
         }
+        Invoke-RestMethod @options
 
-        Expand-Archive -Path ".\CascadiaCode.zip" -DestinationPath ".\CascadiaCode" -Force
+        Expand-Archive -Path ".\$fontDownloadName.zip" -DestinationPath ".\$fontDownloadName" -Force
         $destination = (New-Object -ComObject Shell.Application).Namespace(0x14)
-        Get-ChildItem -Path ".\CascadiaCode" -Recurse -Filter "*.ttf" | ForEach-Object {
-            If (-not(Test-Path "C:\Windows\Fonts\$($_.Name)")) {        
+        Get-ChildItem -Path ".\$fontDownloadName" -Recurse -Filter "*.ttf" | ForEach-Object {
+            If (-not(Test-Path "C:\Windows\Fonts\$($_.Name)")) {
                 $destination.CopyHere($_.FullName, 0x10)
             }
         }
 
-        Remove-Item -Path ".\CascadiaCode" -Recurse -Force
-        Remove-Item -Path ".\CascadiaCode.zip" -Force
+        Remove-Item -Path ".\$fontDownloadName" -Recurse -Force
+        Remove-Item -Path ".\$fontDownloadName.zip" -Force
     }
 } catch {
     Write-Error "Failed to download or install the Cascadia Code font. Error: $_"
 }
 
 # Final check and message to the user
-if ((Test-Path -Path $PROFILE) -and (winget list --name "OhMyPosh" -e) -and ($fontFamilies -contains "CaskaydiaCove NF")) {
+if ((Test-Path -Path $PROFILE) -and (winget list --name "OhMyPosh" -e) -and ($fontFamilies -contains $fontName)) {
     Write-Host "Setup completed successfully. Please restart your PowerShell session to apply changes."
 } else {
     Write-Warning "Setup completed with errors. Please check the error messages above."
-}
-
-# Choco install
-try {
-    Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-} catch {
-    Write-Error "Failed to install Chocolatey. Error: $_"
 }
 
 # Terminal Icons Install
@@ -108,6 +101,7 @@ try {
 } catch {
     Write-Error "Failed to install Terminal Icons module. Error: $_"
 }
+
 # zoxide Install
 try {
     winget install -e --id ajeetdsouza.zoxide

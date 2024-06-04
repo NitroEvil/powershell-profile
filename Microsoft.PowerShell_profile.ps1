@@ -10,10 +10,6 @@ if (-not (Get-Module -ListAvailable -Name Terminal-Icons)) {
     Install-Module -Name Terminal-Icons -Scope CurrentUser -Force -SkipPublisherCheck
 }
 Import-Module -Name Terminal-Icons
-$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-if (Test-Path($ChocolateyProfile)) {
-    Import-Module "$ChocolateyProfile"
-}
 
 # Check for Profile Updates
 function Update-Profile {
@@ -23,9 +19,12 @@ function Update-Profile {
     }
 
     try {
-        $url = "https://raw.githubusercontent.com/ChrisTitusTech/powershell-profile/main/Microsoft.PowerShell_profile.ps1"
+        $options = @{
+            Uri     = "https://github.com/NitroEvil/powershell-profile/raw/main/Microsoft.PowerShell_profile.ps1"
+            OutFile = "$env:temp/Microsoft.PowerShell_profile.ps1"
+        }
+        Invoke-RestMethod @options
         $oldhash = Get-FileHash $PROFILE
-        Invoke-RestMethod $url -OutFile "$env:temp/Microsoft.PowerShell_profile.ps1"
         $newhash = Get-FileHash "$env:temp/Microsoft.PowerShell_profile.ps1"
         if ($newhash.Hash -ne $oldhash.Hash) {
             Copy-Item -Path "$env:temp/Microsoft.PowerShell_profile.ps1" -Destination $PROFILE -Force
@@ -71,7 +70,8 @@ Update-PowerShell
 
 
 # Admin Check and Prompt Customization
-$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$currentUser = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+$isAdmin = $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 function prompt {
     if ($isAdmin) { "[" + (Get-Location) + "] # " } else { "[" + (Get-Location) + "] $ " }
 }
@@ -87,21 +87,19 @@ function Test-CommandExists {
 
 # Editor Configuration
 $EDITOR = if (Test-CommandExists nvim) { 'nvim' }
-          elseif (Test-CommandExists pvim) { 'pvim' }
-          elseif (Test-CommandExists vim) { 'vim' }
-          elseif (Test-CommandExists vi) { 'vi' }
-          elseif (Test-CommandExists code) { 'code' }
-          elseif (Test-CommandExists notepad++) { 'notepad++' }
-          elseif (Test-CommandExists sublime_text) { 'sublime_text' }
-          else { 'notepad' }
+elseif (Test-CommandExists pvim) { 'pvim' }
+elseif (Test-CommandExists vim) { 'vim' }
+elseif (Test-CommandExists vi) { 'vi' }
+elseif (Test-CommandExists code) { 'code' }
+elseif (Test-CommandExists notepad++) { 'notepad++' }
+elseif (Test-CommandExists sublime_text) { 'sublime_text' }
+else { 'notepad' }
 Set-Alias -Name vim -Value $EDITOR
 
-function Edit-Profile {
-    vim $PROFILE.CurrentUserAllHosts
-}
+function Edit-Profile { vim $PROFILE.CurrentUserAllHosts }
 function touch($file) { "" | Out-File $file -Encoding ASCII }
 function ff($name) {
-    Get-ChildItem -recurse -filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
+    Get-ChildItem -Recurse -Filter "*${name}*" -ErrorAction SilentlyContinue | ForEach-Object {
         Write-Output "$($_.directory)\$($_)"
     }
 }
@@ -112,93 +110,51 @@ function Get-PubIP { (Invoke-WebRequest http://ifconfig.me/ip).Content }
 # System Utilities
 function uptime {
     if ($PSVersionTable.PSVersion.Major -eq 5) {
-        Get-WmiObject win32_operatingsystem | Select-Object @{Name='LastBootUpTime'; Expression={$_.ConverttoDateTime($_.lastbootuptime)}} | Format-Table -HideTableHeaders
+        Get-WmiObject win32_operatingsystem |
+        Select-Object @{Name = 'LastBootUpTime'; Expression = { $_.ConverttoDateTime($_.lastbootuptime) } } |
+        Format-Table -HideTableHeaders
     } else {
         net statistics workstation | Select-String "since" | ForEach-Object { $_.ToString().Replace('Statistics since ', '') }
     }
 }
 
-function reload-profile {
-    & $profile
-}
+function reload-profile { . $PROFILE }
 
 function unzip ($file) {
     Write-Output("Extracting", $file, "to", $pwd)
     $fullFile = Get-ChildItem -Path $pwd -Filter $file | ForEach-Object { $_.FullName }
     Expand-Archive -Path $fullFile -DestinationPath $pwd
 }
-function hb {
-    if ($args.Length -eq 0) {
-        Write-Error "No file path specified."
-        return
-    }
-    
-    $FilePath = $args[0]
-    
-    if (Test-Path $FilePath) {
-        $Content = Get-Content $FilePath -Raw
-    } else {
-        Write-Error "File path does not exist."
-        return
-    }
-    
-    $uri = "http://bin.christitus.com/documents"
-    try {
-        $response = Invoke-RestMethod -Uri $uri -Method Post -Body $Content -ErrorAction Stop
-        $hasteKey = $response.key
-        $url = "http://bin.christitus.com/$hasteKey"
-        Write-Output $url
-    } catch {
-        Write-Error "Failed to upload the document. Error: $_"
-    }
-}
+
 function grep($regex, $dir) {
     if ( $dir ) {
-        Get-ChildItem $dir | select-string $regex
+        Get-ChildItem $dir | Select-String $regex
         return
     }
-    $input | select-string $regex
+    $input | Select-String $regex
 }
 
-function df {
-    get-volume
-}
+function df { Get-Volume }
 
-function sed($file, $find, $replace) {
-    (Get-Content $file).replace("$find", $replace) | Set-Content $file
-}
+function sed($file, $find, $replace) { (Get-Content $file).replace("$find", $replace) | Set-Content $file }
 
-function which($name) {
-    Get-Command $name | Select-Object -ExpandProperty Definition
-}
+function which($name) { Get-Command $name | Select-Object -ExpandProperty Definition }
 
-function export($name, $value) {
-    set-item -force -path "env:$name" -value $value;
-}
+function export($name, $value) { Set-Item -Force -Path "env:$name" -Value $value; }
 
-function pkill($name) {
-    Get-Process $name -ErrorAction SilentlyContinue | Stop-Process
-}
+function pkill($name) { Get-Process $name -ErrorAction SilentlyContinue | Stop-Process }
 
-function pgrep($name) {
-    Get-Process $name
-}
+function pgrep($name) { Get-Process $name }
 
-function head {
-  param($Path, $n = 10)
-  Get-Content $Path -Head $n
-}
+function head($Path, $n = 10) { Get-Content $Path -Head $n }
 
-function tail {
-  param($Path, $n = 10)
-  Get-Content $Path -Tail $n
-}
+function tail($Path, $n = 10) { Get-Content $Path -Tail $n }
 
 # Quick File Creation
-function nf { param($name) New-Item -ItemType "file" -Path . -Name $name }
+function nf($name) { New-Item -ItemType "file" -Path . -Name $name }
 
 # Directory Management
-function mkcd { param($dir) mkdir $dir -Force; Set-Location $dir }
+function mkcd($dir) { mkdir $dir -Force; Set-Location $dir }
 
 ### Quality of Life Aliases
 
@@ -222,7 +178,7 @@ function gs { git status }
 
 function ga { git add . }
 
-function gc { param($m) git commit -m "$m" }
+function gc($message) { git commit -m "$message" }
 
 function gp { git push }
 
@@ -251,13 +207,29 @@ function pst { Get-Clipboard }
 
 # Enhanced PowerShell Experience
 Set-PSReadLineOption -Colors @{
-    Command = 'Yellow'
+    Command   = 'Yellow'
     Parameter = 'Green'
-    String = 'DarkCyan'
+    String    = 'DarkCyan'
 }
 
+# dotnet cli watch command with HTTPS
+function dnwatch { dotnet watch -lp https }
+
 ## Final Line to set prompt
-oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/cobalt2.omp.json | Invoke-Expression
+if (-not (Test-Path -Path $env:POSH_THEMES_PATH\powerlevel10k_rainbow_custom.omp.json)) {
+    $options = @{
+        Uri     = "https://github.com/NitroEvil/powershell-profile/raw/main/powerlevel10k_rainbow_custom.omp.json"
+        OutFile = "$env:POSH_THEMES_PATH\powerlevel10k_rainbow_custom.omp.json"
+    }
+    try {
+        Invoke-RestMethod @options
+    } catch {
+        Write-Error "Failed to download powerlevel10k_rainbow_custom.omp.json. Error: $_"
+    }
+}
+oh-my-posh init pwsh --config="$env:POSH_THEMES_PATH\powerlevel10k_rainbow_custom.omp.json" | Invoke-Expression
+$env:POSH_GIT_ENABLED = $true
+
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
 } else {
@@ -270,3 +242,13 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
         Write-Error "Failed to install zoxide. Error: $_"
     }
 }
+
+
+# PowerShell parameter completion shim for the dotnet CLI
+Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
+    param($commandName, $wordToComplete, $cursorPosition)
+    dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+    }
+}
+Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
