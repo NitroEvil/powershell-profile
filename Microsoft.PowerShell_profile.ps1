@@ -20,7 +20,7 @@ function Update-Profile {
 
     try {
         $options = @{
-            Uri     = "https://raw.githubusercontent.com/NitroEvil/powershell-profile/main/Microsoft.PowerShell_profile.ps1"
+            Uri     = "https://github.com/NitroEvil/powershell-profile/raw/main/Microsoft.PowerShell_profile.ps1"
             OutFile = "$env:temp/Microsoft.PowerShell_profile.ps1"
         }
         Invoke-RestMethod @options
