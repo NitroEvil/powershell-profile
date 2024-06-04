@@ -270,3 +270,13 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
         Write-Error "Failed to install zoxide. Error: $_"
     }
 }
+
+
+# PowerShell parameter completion shim for the dotnet CLI
+Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
+    param($commandName, $wordToComplete, $cursorPosition)
+    dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+    }
+}
+Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
