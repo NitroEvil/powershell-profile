@@ -216,7 +216,20 @@ Set-PSReadLineOption -Colors @{
 function dnwatch { dotnet watch -lp https }
 
 ## Final Line to set prompt
-oh-my-posh init pwsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/cobalt2.omp.json | Invoke-Expression
+if (-not (Test-Path -Path $env:POSH_THEMES_PATH\powerlevel10k_rainbow_custom.omp.json)) {
+    $options = @{
+        Uri     = "https://github.com/NitroEvil/powershell-profile/raw/main/powerlevel10k_rainbow_custom.omp.json"
+        OutFile = "$env:POSH_THEMES_PATH\powerlevel10k_rainbow_custom.omp.json"
+    }
+    try {
+        Invoke-RestMethod @options
+    } catch {
+        Write-Error "Failed to download powerlevel10k_rainbow_custom.omp.json. Error: $_"
+    }
+}
+oh-my-posh init pwsh --config="$env:POSH_THEMES_PATH\powerlevel10k_rainbow_custom.omp.json" | Invoke-Expression
+$env:POSH_GIT_ENABLED = $true
+
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression (& { (zoxide init powershell | Out-String) })
 } else {
